@@ -1,27 +1,29 @@
-package movies;
+package resources;
 
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.HashMap;
 
 public class MyTest extends JFrame  {
 	
    private JToolBar barre = new JToolBar();
-   private JTextField txtField;
+   private JTextField txtField1;
+   private  JTextField txtField2;
    private JScrollPane scrollTree;
-   private JTable table;
+   private static JTable table;
    private JScrollPane scrollTable;
    private JTree arbre;
    private DefaultMutableTreeNode racine;
@@ -29,11 +31,12 @@ public class MyTest extends JFrame  {
    private HashMap<String, File> fileInfo;
    private String selectedData = null;
    private String pathFileSelected;
-   private String pathTreeSelected;
-   private JPopupMenu menu = new JPopupMenu("Popup");
-
+   private static String pathTreeSelected;
+   private JPopupMenu menu = new JPopupMenu("Popup menu");
    private String Choix;
-   private JList<String> list;
+   private String autoPathFileSelected;
+
+   
    
    private JButton copy = new JButton("Copy", new ImageIcon("src/resources/Copy.png")),
 		   paste = new JButton("Paste", new ImageIcon("src/resources/Paste.png")),
@@ -47,18 +50,21 @@ public class MyTest extends JFrame  {
 		   details = new JButton("Details", new ImageIcon("src/resources/Details.png")),
 		   groupBy = new JButton("Group By", new ImageIcon("src/resources/GroupBy.png")),
 		   sort = new JButton("Sort By", new ImageIcon("src/resources/Sort.png")),
-		   refrech = new JButton(new ImageIcon("src/resources/Refrech.png"));;
+		   refrech = new JButton(new ImageIcon("src/resources/Refrech.png"));
+
    
 
    final String[] colHeads = { "File Name", "Date modified", "Read Only", "SIZE" };
    String[][] data = { { "", "", "", "", "" } };
 
+   
 			
    public MyTest() {  
 	  setLayout(new BorderLayout(0, 20));  
 	  setSize(800, 600);
       setDefaultCloseOperation(EXIT_ON_CLOSE);
       setLocationRelativeTo(null);
+      setTitle("Windows Explorer");
       
       Image icon = Toolkit.getDefaultToolkit().getImage("src/resources/Icon.png");    
       setIconImage(icon); 
@@ -70,6 +76,7 @@ public class MyTest extends JFrame  {
 	  Display();
 	  buttonAction();
 	  popUp();
+	  ToolBar.popUpSort();
       setVisible(true);
       
    }
@@ -219,7 +226,9 @@ public class MyTest extends JFrame  {
 	
 	// ------------------------------------------- TextField and tabble
 	private void Display() {
-		txtField = new JTextField();
+		txtField1 = new JTextField();
+		txtField2 = new JTextField();
+
 		scrollTree = new JScrollPane(arbre);	
 		
 		final String[] colHeads = {"File Name", "Date modified", "Type", "SIZE"  };
@@ -228,10 +237,16 @@ public class MyTest extends JFrame  {
 		
 		scrollTable = new JScrollPane(table);
 		
-		refrech.setBounds(705, 69, 16, 16);
+		refrech.setBounds(535, 69, 16, 16);
 		add(refrech);
-		txtField.setBounds(0, 67, 704, 20);
-		add(txtField);
+		
+		txtField1.setBounds(0, 67, 534, 20);
+		add(txtField1);
+		
+		txtField2.setBounds(560, 67, 200, 20);
+		txtField2.setText("Search");
+		add(txtField2);
+		
 		add(scrollTree, BorderLayout.WEST);
 		add(scrollTable, BorderLayout.CENTER);
 		
@@ -239,7 +254,38 @@ public class MyTest extends JFrame  {
 			public void mouseClicked(MouseEvent me) {
 				doMouseClicked(me);
 			}
-		});
+		});	
+		
+		
+		txtField2.addMouseListener(new MouseAdapter() {
+			public void mouseClicked(MouseEvent me) {
+				txtField2.setText("");
+			}
+		});	
+		
+		
+		
+		 txtField2.addKeyListener(new KeyAdapter() {
+	         public void keyPressed(KeyEvent e) {
+	           int key = e.getKeyCode();
+	           if (key == KeyEvent.VK_ENTER) {
+	        	   	Toolkit.getDefaultToolkit().beep();
+	        		for(File f: new File(pathTreeSelected).listFiles()) {
+	        			
+	        			if(f.getName().contains(txtField2.getText())) {
+	        				System.out.println(f);
+	        				showFiles(String.valueOf(f));
+
+	        			}
+	        			else {
+	              			System.out.println("no");
+
+	        			}
+	        		}  
+
+	           }
+	        }
+	     });
 	}
 	
    
@@ -257,7 +303,6 @@ public class MyTest extends JFrame  {
 	
 	void doMouseClicked(MouseEvent me) {
 		TreePath tp = arbre.getPathForLocation(me.getX(), me.getY());
-		
 
 		if (tp == null)
 			return;
@@ -278,7 +323,7 @@ public class MyTest extends JFrame  {
 			if(pathTreeSelected.contains("Local Disk (C:)")) {
 				pathTreeSelected = "C:\\";
 				s = "C:\\";
-				txtField.setText(s);
+				
 				showFiles(pathTreeSelected);
 				if (s.contains(".")) {
 					s = "C:\\"+ s;
@@ -288,9 +333,14 @@ public class MyTest extends JFrame  {
 			}
 	
 			pathTreeSelected = pathTreeSelected.replace("This PC", "C:\\" + "Users\\" + username);
-
-			txtField.setText(s);
+			
+			String pathDesign = "";
+			pathDesign = pathTreeSelected.replace("\\", "").replace("C:", "This PC > ").replace("Users", "").replace(username, "");
+			txtField1.setText(pathDesign);
 			showFiles(pathTreeSelected);
+			
+			
+
 			
 			if (s.contains(".")) {
 				s = "C:\\Users\\" + username + s;
@@ -300,22 +350,47 @@ public class MyTest extends JFrame  {
 		}
 	}
 	
+	
+	
+	private void DesignPath() {
+		String pathDesign = "";
+		
+		pathDesign = pathFileSelected.replace("\\", " > ").replace("C:", "This PC");
+		txtField1.setText(pathDesign);
+	}
+	
+	
+	//------------------------------POP UP--------------------------------	
 	 private void popUp() {
-			
-			//------------------------------POP UP--------------------------------	
+				JMenuItem Open = new JMenuItem("Open");
 				JMenuItem Copy = new JMenuItem("Copy");
 				JMenuItem Cut = new JMenuItem("Cut");
 				JMenuItem Delete = new JMenuItem("Delete");
 				JMenuItem Paste = new JMenuItem("Paste");
 				JMenuItem Rename = new JMenuItem("Rename");
 			
+				
+				Open.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent e) {
+						File f = new File(pathFileSelected);
+						
+						if(f.isFile()) {
+							openFile(f);
+						}
+						else {
+							showFiles(pathFileSelected);
+							DesignPath();
+						}
+
+					}
+				});
+				
 
 				Copy.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
 						try {
 						Choix = ToolBar.Copy(pathFileSelected);
 						}catch(Exception ex) {
-							System.out.println(ex);
 						}
 					}
 				});
@@ -325,7 +400,6 @@ public class MyTest extends JFrame  {
 						try {
 						Choix = ToolBar.Cut(pathFileSelected);
 						}catch(Exception ex) {
-							System.out.println(ex);
 						}
 					}
 				});
@@ -335,7 +409,6 @@ public class MyTest extends JFrame  {
 						ToolBar.Delete(pathFileSelected);
 						showFiles(pathTreeSelected);
 						}catch(Exception ex) {
-							System.out.println(ex);
 						}
 					}
 				});
@@ -345,7 +418,6 @@ public class MyTest extends JFrame  {
 						ToolBar.Paste(pathFileSelected, String.format("%s\\%s", pathTreeSelected, selectedData), Choix);
 						showFiles(pathTreeSelected);
 						}catch(Exception ex) {
-							System.out.println(ex);
 						}
 					}
 				});
@@ -354,52 +426,58 @@ public class MyTest extends JFrame  {
 						try {
 						System.out.println("Rename");
 						}catch(Exception ex) {
-							System.out.println(ex);
 						}
 					}
 				});
 
-				menu.add(Copy);
+				menu.add(Open);
 				menu.add(Cut);
-				menu.add(Delete);
+				menu.add(Copy);
 				menu.add(Paste);
+				menu.addSeparator();
+				menu.add(Delete);
 				menu.add(Rename);
 	 }
 	 
 	
 	
-	void showFiles(String filename) {
-		System.out.println(filename);
-		File temp = new File(filename);
-		data = new String[][] { { "", "", "", "" } };
-		remove(scrollTable);	
+	 void showFiles(String filename) {
+			File temp = new File(filename);
+			data = new String[][] { { "", "", "", "" } };
+			remove(scrollTable);	
 
-		table = new JTable(data, colHeads);
-		table.setShowGrid(false);
-		table.setShowHorizontalLines(false);
-		table.setShowVerticalLines(false);
-		
-		scrollTable = new JScrollPane(table);
-		add(scrollTable, BorderLayout.CENTER);
-		setVisible(true);
+			table = new JTable(data, colHeads);
+			table.setShowGrid(false);
+			table.setShowHorizontalLines(false);
+			table.setShowVerticalLines(false);
+			
+			scrollTable = new JScrollPane(table);
+			add(scrollTable, BorderLayout.CENTER);
+			setVisible(true);
 
-		if (!temp.exists())
-			return;
-		if (!temp.isDirectory())
-			return;
-		SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyy hh:mm  a");
-		fileInfo = new HashMap<String, File>();
-		File[] filelist = temp.listFiles(); 
-		int fileCounter = 0;
-		data = new String[filelist.length][4];
-		for (int i = 0; i < filelist.length; i++) {
-			data[fileCounter][0] = new String(filelist[i].getName());
-			data[fileCounter][1] = new String(sdf.format(filelist[i].lastModified()) + "");
-			data[fileCounter][2] = new String(!filelist[i].canWrite() + "");
-			data[fileCounter][3] = new String(Math.round((double) filelist[i].length()/1024) + "  kb");
-			fileInfo.put(data[fileCounter][0], filelist[i]);
-			fileCounter++;
-		}
+			if (!temp.exists())
+				return;
+			if (!temp.isDirectory())
+				return;
+			SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyy hh:mm  a");
+			fileInfo = new HashMap<String, File>();
+			File[] filelist = temp.listFiles(); 
+			int fileCounter = 0;
+			data = new String[filelist.length][4];
+			long tempi = 0;
+			for (int i = 0; i < filelist.length; i++) {
+				long tempo = filelist[i].lastModified();
+				if (tempo>tempi) {
+					tempi = tempo;
+					autoPathFileSelected = filelist[i].getAbsolutePath();
+				}
+				data[fileCounter][0] = new String(filelist[i].getName());
+				data[fileCounter][1] = new String(sdf.format(filelist[i].lastModified()) + "");
+				data[fileCounter][2] = new String(!filelist[i].canWrite() + "");
+				data[fileCounter][3] = new String(Math.round((double) filelist[i].length()/1024) + "  kb");
+				fileInfo.put(data[fileCounter][0], filelist[i]);
+				fileCounter++;
+			}
 
 
 		
@@ -468,18 +546,16 @@ public class MyTest extends JFrame  {
 					menu.show(e.getComponent(), e.getX(), e.getY());
 					
 				}
-				
-			
-
 		}
 	});
+			
 		
 		add(scrollTable, BorderLayout.CENTER);
 		setVisible(true);
 
 	}
 	
-	// ----------------------------------------------------------------------------
+	// --------------------------------------- ToolBar -------------------------------------
 	void buttonAction() {
 		copy.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -524,12 +600,22 @@ public class MyTest extends JFrame  {
 				try {
 					ToolBar.newFolder(pathTreeSelected);
 					showFiles(pathTreeSelected);
+					pathFileSelected = autoPathFileSelected;
+					renameFile();
+					
 				} catch (IOException e1) {
 					e1.printStackTrace();
 				}
 			}
 		});
 		
+		rename.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				renameFile();
+				pathFileSelected = autoPathFileSelected;
+
+			}
+		});
 		
 		sellectAll.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {	
@@ -540,16 +626,86 @@ public class MyTest extends JFrame  {
 		
 		sort.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				ToolBar.sortBy(table);
+				ToolBar.getSortList().show(sort, sort.getWidth()/2-26, sort.getHeight()/2+30);
+								
 		}
 	});
+		
+		
+		
+//	groupBy.addActionListener(new ActionListener() {
+//		public void actionPerformed(ActionEvent e) {
+//			ToolBar.getSortList().show(groupBy, groupBy.getWidth()/2-31, groupBy.getHeight()/2+30);
+//		}
+//	});
+//		
+	
+		
+		
+	details.addActionListener(new ActionListener() {
+		public void actionPerformed(ActionEvent e) {
+			showFiles(pathTreeSelected);
+		}
+	});
+	
+	
+	refrech.addActionListener(new ActionListener() {
+		public void actionPerformed(ActionEvent e) {
+			showFiles(pathTreeSelected);
+		}
+	});
+	
+	
+	
+	
+		
 	}
 		
 	
+	public static String getpathTreeSelected(){
+		return pathTreeSelected;
+	}
 	
+	public static JTable getTable(){
+		return table;
+	}
+	
+	
+	void renameFile() {
+		if(pathFileSelected != null) {
+		String pathFileSelected2 = pathFileSelected.replace("\\", "-");
+		String file = "";
+		String newPath = "";
 		
+		String tab[] = pathFileSelected2.split("-");
+		for(int i =0; i<tab.length; i++) {
+			file = tab[i];
+		}
+		String newArr[] = Arrays.copyOf(tab, tab.length - 1);
+		
+        File file1 = new File(pathFileSelected);
+        String m = JOptionPane.showInputDialog("Rename", file);
+       
+        for(int i =0; i<newArr.length; i++) {
+        	newPath += newArr[i];
+        	newPath +="\\";
+		}
+        
+        newPath = newPath+=m;
+        File rename = new File(newPath);
+
+        
+        file1.renameTo(rename);
+	  showFiles(pathTreeSelected);
+	  table.setEnabled(true);
+	  
+		}
+	}
+	
+	
    public static void main(String[] args) { new MyTest();}
 }
+
 
 
 
